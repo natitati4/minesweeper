@@ -15,6 +15,6 @@
 #define RESET_BUTTON_COLOR_PRESSED sf::Color(255, 0, 0)  // Red color for pressed state
 
 #define WINDOW_WIDTH CELL_SIZE * DEFAULT_ROWS_NUM
-#define WINDOW_HEIGHT CELL_SIZE * DEFAULT_COLS_NUM
+#define WINDOW_HEIGHT CELL_SIZE * DEFAULT_COLS_NUM + MENU_HEIGHT
 
 void startGame();

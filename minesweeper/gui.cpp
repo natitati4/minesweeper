@@ -2,7 +2,8 @@
 
 sf::Texture unrevealedEmptyTexture;
 sf::Texture revealedEmptyTexture;
-sf::Texture mineTexture;
+sf::Texture pressedMineTexture;
+sf::Texture unpressedMineTexture;
 sf::Texture flagTexture;
 sf::Texture num1Texture;
 sf::Texture num2Texture;
@@ -21,7 +22,10 @@ bool initTextures()
     if (!revealedEmptyTexture.loadFromFile("Images/revealed_empty.png"))
         return false;
 
-    if (!mineTexture.loadFromFile("Images/mine.png"))
+    if (!pressedMineTexture.loadFromFile("Images/pressedMine.png"))
+        return false;
+
+    if (!unpressedMineTexture.loadFromFile("Images/unpressedMine.png"))
         return false;
 
     if (!flagTexture.loadFromFile("Images/flag.png"))
@@ -206,7 +210,7 @@ void updateGuiGrid(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<st
     }
 }
 
-void loseScreen(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<std::vector<char>>& gameGrid)
+void loseScreen(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<std::vector<char>>& gameGrid, int pressedMineRow, int pressedMineCol)
 {
     // Set the position and scale of each sprite
     for (int i = 0; i < DEFAULT_ROWS_NUM; i++)
@@ -214,13 +218,11 @@ void loseScreen(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<std::
         for (int j = 0; j < DEFAULT_COLS_NUM; j++)
         {
             if (gameGrid[i][j] == UNREVEALED_MINE)
-            {
-                guiGrid[i][j].setTexture(mineTexture);
-                guiGrid[i][j].setPosition(i * CELL_SIZE, MENU_HEIGHT + j * CELL_SIZE);
-                guiGrid[i][j].setScale((float)CELL_SIZE / mineTexture.getSize().x, (float)CELL_SIZE / mineTexture.getSize().y);
-            }
+                setAppropriateTexture(guiGrid, i, j, unpressedMineTexture);
         }
     }
+
+    setAppropriateTexture(guiGrid, pressedMineRow, pressedMineCol, pressedMineTexture);
 }
 
 void startGame()
@@ -282,7 +284,7 @@ void startGame()
                     // Pressed a mine
                     if (gameGrid[row][col] == UNREVEALED_MINE)
                     {
-                        loseScreen(guiGrid, gameGrid);
+                        loseScreen(guiGrid, gameGrid, row, col);
                         gameEnded = true;
                     }
                     
