@@ -233,7 +233,7 @@ void startGame()
     std::vector<std::vector<char>> gameGrid = initGameGrid(DEFAULT_ROWS_NUM, DEFAULT_COLS_NUM, DEFAULT_MINES_NUM);
     std::vector<std::vector<sf::Sprite>> guiGrid = initGuiGrid();
 
-    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Minesweeper");
+    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Minesweeper", sf::Style::Titlebar | sf::Style::Close);
     
     sf::RectangleShape menuBar(sf::Vector2f(window.getSize().x, MENU_HEIGHT));
     menuBar.setFillColor(sf::Color(200, 200, 200));
@@ -273,8 +273,8 @@ void startGame()
                     // Get the mouse position relative to the window
                     sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
 
-                    // If pressed the menu bar, ignore
-                    if (mousePosition.y < MENU_HEIGHT)
+                    // If pressed the menu bar or the tiny pixel row at the bottom, ignore
+                    if (mousePosition.y < MENU_HEIGHT || WINDOW_HEIGHT - 1 < mousePosition.y)
                         continue;
 
                     // Calculate the grid indices based on the mouse position
