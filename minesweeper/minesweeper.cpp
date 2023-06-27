@@ -42,7 +42,7 @@ void updateGameGrid(std::vector<std::vector<char>>& grid, int row, int col)
 			if ((i == 0 && j == 0) || !(0 <= newRow && newRow < grid.size()) || !(0 <= newCol && newCol < grid[0].size()))
 				continue;
 
-			mines += grid[newRow][newCol] == UNREVEALED_MINE; // Will add 1 if mine
+			mines += grid[newRow][newCol] == UNREVEALED_MINE || grid[newRow][newCol] == FLAG_MINE; // Will add 1 if mine or flag with mine
 		}
 	}
 

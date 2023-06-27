@@ -13,6 +13,8 @@ sf::Texture num5Texture;
 sf::Texture num6Texture;
 sf::Texture num7Texture;
 sf::Texture num8Texture;
+sf::Texture clearingDeviceTexture;
+sf::Sprite clearingDeviceSprite;
 
 bool initTextures()
 {
@@ -55,7 +57,9 @@ bool initTextures()
     if (!num8Texture.loadFromFile("Images/8.png"))
         return false;
 
-    
+    if (!clearingDeviceTexture.loadFromFile("Images/cleaningDevice.png"))
+        return false;
+
     // Everything fine, return true
     return true;
 }
@@ -77,7 +81,9 @@ bool checkResetButtonPressed(sf::RenderWindow& window, sf::Text& resetButton)
     }
 
     else
+    {
         resetButton.setFillColor(RESET_BUTTON_COLOR_IDLE);
+    }
 
     return false;
 }
@@ -110,6 +116,10 @@ std::vector<std::vector<sf::Sprite>> initGuiGrid()
         }
     }
 
+    clearingDeviceSprite.setPosition(0, -static_cast<float>(clearingDeviceTexture.getSize().y));
+    clearingDeviceSprite.setScale(static_cast<float>(WINDOW_WIDTH) / clearingDeviceTexture.getSize().x,
+        static_cast<float>(CLEANING_DEVICE_HEIGHT) / clearingDeviceTexture.getSize().y);
+
     return guiGrid;
 }
 
@@ -141,6 +151,18 @@ void textureForSquare(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector
         case REVEALED_EMPTY:
         {
             setAppropriateTexture(guiGrid, row, col, revealedEmptyTexture);
+            break;
+        }
+
+        case FLAG_EMPTY:
+        {
+            setAppropriateTexture(guiGrid, row, col, flagTexture);
+            break;
+        }
+
+        case FLAG_MINE:
+        {
+            setAppropriateTexture(guiGrid, row, col, flagTexture);
             break;
         }
 
@@ -210,6 +232,27 @@ void updateGuiGrid(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<st
     }
 }
 
+bool checkWin(std::vector<std::vector<char>>& gameGrid)
+{
+    for (int i = 0; i < DEFAULT_ROWS_NUM; i++)
+    {
+        for (int j = 0; j < DEFAULT_COLS_NUM; j++)
+        {
+            // If there's an empty square (either with a flag or not) that wasn't clicked, no win
+            if (gameGrid[i][j] == UNREVEALED_EMPTY || gameGrid[i][j] == FLAG_EMPTY)
+                return false;
+        }
+    }
+
+    return true;
+}
+
+
+void winScreen()
+{
+
+}
+
 void loseScreen(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<std::vector<char>>& gameGrid, int pressedMineRow, int pressedMineCol)
 {
     // Set the position and scale of each sprite
@@ -222,6 +265,7 @@ void loseScreen(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<std::
         }
     }
 
+    // Set texture for the pressed mine
     setAppropriateTexture(guiGrid, pressedMineRow, pressedMineCol, pressedMineTexture);
 }
 
@@ -242,21 +286,16 @@ void startGame()
     if (!font.loadFromFile("ArialFont/arial.ttf"))
         return;
 
-    // Button
+    // Reset button
     sf::Text resetButton("Reset", font, 20);
     resetButton.setPosition(10, (MENU_HEIGHT - RESET_BUTTON_HEIGHT) / 2);
 
-    // Dropdown
-    sf::RectangleShape dropdownButton(sf::Vector2f(DROPDOWN_WIDTH, DROPDOWN_HEIGHT));
-    dropdownButton.setPosition(window.getSize().x - DROPDOWN_WIDTH - 10, (MENU_HEIGHT - DROPDOWN_HEIGHT) / 2);
-    dropdownButton.setFillColor(sf::Color::White);
-    dropdownButton.setOutlineThickness(1);
-    dropdownButton.setOutlineColor(sf::Color(100, 100, 100));
+    clearingDeviceSprite.setTexture(clearingDeviceTexture);
 
-    sf::Text dropdownText("Difficulty", font, 16);
-    dropdownText.setPosition(window.getSize().x - DROPDOWN_WIDTH - 10 + 10, (MENU_HEIGHT - DROPDOWN_HEIGHT) / 2);
+    bool gameWon = false;
+    bool gameLost = false;
 
-    bool gameEnded = false;
+    bool isClearingAnimationFinished = false;
 
     while (window.isOpen())
     {
@@ -266,15 +305,15 @@ void startGame()
             if (event.type == sf::Event::Closed)
                 window.close();
 
-            else if (event.type == sf::Event::MouseButtonPressed)
+            else if (event.type == sf::Event::MouseButtonReleased)
             {
-                if (event.mouseButton.button == sf::Mouse::Left && !gameEnded)
+                if (event.mouseButton.button == sf::Mouse::Left && !gameLost && !gameWon)
                 {
                     // Get the mouse position relative to the window
                     sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
 
-                    // If pressed the menu bar or the tiny pixel row at the bottom, ignore
-                    if (mousePosition.y < MENU_HEIGHT || WINDOW_HEIGHT - 1 < mousePosition.y)
+                    // If pressed the menu bar or the tiny pixel row at the bottom, or if out of X bounds, ignore.
+                    if (mousePosition.y < MENU_HEIGHT || WINDOW_HEIGHT - 1 < mousePosition.y || mousePosition.y < 0 || WINDOW_WIDTH < mousePosition.x)
                         continue;
 
                     // Calculate the grid indices based on the mouse position
@@ -285,7 +324,7 @@ void startGame()
                     if (gameGrid[row][col] == UNREVEALED_MINE)
                     {
                         loseScreen(guiGrid, gameGrid, row, col);
-                        gameEnded = true;
+                        gameLost = true;
                     }
                     
                     // Pressed empty square
@@ -293,7 +332,50 @@ void startGame()
                     {
                         updateGameGrid(gameGrid, row, col);
                         updateGuiGrid(guiGrid, gameGrid);
+
+                        if (checkWin(gameGrid))
+                        {
+                            gameWon = true;
+
+                            // Start the clearing animation
+                            isClearingAnimationFinished = false;
+                        }
                     }
+                }
+
+                else if (event.mouseButton.button == sf::Mouse::Right && !gameLost && !gameWon)
+                {
+                    // Get the mouse position relative to the window
+                    sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
+
+                    // If pressed the menu bar or the tiny pixel row at the bottom, or if out of X bounds, ignore.
+                    if (mousePosition.y < MENU_HEIGHT || WINDOW_HEIGHT - 1 < mousePosition.y || mousePosition.y < 0 || WINDOW_WIDTH < mousePosition.x)
+                        continue;
+
+                    // Calculate the grid indices based on the mouse position
+                    int row = mousePosition.x / CELL_SIZE;
+                    int col = mousePosition.y / CELL_SIZE - MENU_HEIGHT / CELL_SIZE;
+
+                    // Pressed outside
+                    if (row == -1)
+                        return;
+
+                    // Empty (or mine) square to flag
+                    if (gameGrid[row][col] == UNREVEALED_EMPTY)
+                        gameGrid[row][col] = FLAG_EMPTY;
+
+                    else if (gameGrid[row][col] == UNREVEALED_MINE)
+                        gameGrid[row][col] = FLAG_MINE;
+
+                    // Empty (or mine) square to flag
+                    else if (gameGrid[row][col] == FLAG_EMPTY)
+                        gameGrid[row][col] = UNREVEALED_EMPTY;
+
+                    // Empty (or mine) square to flag
+                    else if (gameGrid[row][col] == FLAG_MINE)
+                        gameGrid[row][col] = UNREVEALED_MINE;
+
+                    updateGuiGrid(guiGrid, gameGrid);
                 }
             }
         }
@@ -303,15 +385,28 @@ void startGame()
             gameGrid = initGameGrid(DEFAULT_ROWS_NUM, DEFAULT_COLS_NUM, DEFAULT_MINES_NUM);
             guiGrid = initGuiGrid();
 
-            gameEnded = false;
+            gameWon = false;
+            gameLost = false;
+        }
+
+        // Animation update
+        if (gameWon && !isClearingAnimationFinished)
+        {
+            clearingDeviceSprite.move(0, 0.09); // Move the clearing device downwards
+
+            // Check if the clearing device has reached the bottom of the screen
+            if (clearingDeviceSprite.getPosition().y >= WINDOW_HEIGHT)
+            {
+                isClearingAnimationFinished = true;
+                MessageBox(NULL, L"You win", L"Congratulations", MB_ICONASTERISK);
+            }
         }
 
         window.clear(sf::Color::White);
+        drawGrid(window, guiGrid);
         window.draw(menuBar);
         window.draw(resetButton);
-        window.draw(dropdownButton);
-        window.draw(dropdownText);
-        drawGrid(window, guiGrid);
+        window.draw(clearingDeviceSprite);
         window.display();
     }
 }
