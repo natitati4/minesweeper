@@ -3,7 +3,9 @@ Added flags
 Added win logic and animation
 
 # In the next version
-Add option to decide on difficulty, custom levels, remember user choices via registry
+Add option to decide on difficulty\
+custom levels\
+remember user choices via registry
 
 # How to run
 
