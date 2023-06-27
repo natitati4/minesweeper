@@ -1,5 +1,9 @@
-# Version 1.0
-First of many (jk, maybe 2 more).
+# Version 1.1
+Added flags
+Added win logic and animation
+
+# In the next version
+Add option to decide on difficulty, custom levels, remember user choices via registry
 
 # How to run
 
