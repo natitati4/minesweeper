@@ -5,8 +5,8 @@
 
 #define CELL_SIZE 20
 
-#define DEFAULT_ROWS_NUM 20
-#define DEFAULT_COLS_NUM 20
+#define DEFAULT_ROWS_NUM 15
+#define DEFAULT_COLS_NUM 15
 
 // Symbols for each state of square
 #define UNREVEALED_EMPTY 'E'
@@ -15,7 +15,7 @@
 #define FLAG_EMPTY 'F'
 #define FLAG_MINE 'X'
 
-#define DEFAULT_MINES_NUM 30
+#define DEFAULT_MINES_NUM 50
 
 #define OUT_OF_BOUNDS(idx, len) !(0 <= idx && idx < len)
 
