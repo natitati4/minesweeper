@@ -1,11 +1,10 @@
-# Version 1.1
-Added flags
-Added win logic and animation
+# Version 1.2
+Added option to choose difficulty
+Added flags count
+CURRENTLY ADDING - Option for custom difficulty
 
 # In the next version
-Add option to decide on difficulty\
-custom levels\
-remember user choices via registry
+Not sure there will be one. Maybe, remember user choices via Registry.
 
 # How to run
 
