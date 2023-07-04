@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include <time.h>
 
 #define CELL_SIZE 20
@@ -15,7 +16,7 @@
 #define FLAG_EMPTY 'F'
 #define FLAG_MINE 'X'
 
-#define DEFAULT_MINES_NUM 50
+#define DEFAULT_MINES_NUM 10
 
 #define OUT_OF_BOUNDS(idx, len) !(0 <= idx && idx < len)
 

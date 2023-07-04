@@ -14,7 +14,21 @@ sf::Texture num6Texture;
 sf::Texture num7Texture;
 sf::Texture num8Texture;
 sf::Texture clearingDeviceTexture;
+sf::Texture gameTextTexture;
 sf::Sprite clearingDeviceSprite;
+
+std::unordered_map<std::string, std::vector<int>> difficultyMap{
+    {"Beginner", {9, 9, 10}},
+    {"Intermediate", {15, 15, 35}},
+    {"Expert", {30, 18, 100}}
+};
+
+std::string currDifficulty = "Intermediate";
+int numRows = difficultyMap[currDifficulty][0];
+int numCols = difficultyMap[currDifficulty][1];
+int numMines = difficultyMap[currDifficulty][2];
+int windowWidth = CELL_SIZE * numRows;
+int windowHeight = CELL_SIZE * numCols + MENU_HEIGHT;
 
 bool initTextures()
 {
@@ -64,25 +78,25 @@ bool initTextures()
     return true;
 }
 
-bool checkResetButtonPressed(sf::RenderWindow& window, sf::Text& resetButton)
+bool checkButtonPressed(const sf::RenderWindow& window, sf::Text& button)
 {
     sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
     sf::Vector2f mousePositionF(static_cast<float>(mousePosition.x), static_cast<float>(mousePosition.y));
 
-    if (resetButton.getGlobalBounds().contains(mousePositionF))
+    if (button.getGlobalBounds().contains(mousePositionF))
     {
-        resetButton.setFillColor(RESET_BUTTON_COLOR_HOVER);
+        button.setFillColor(BUTTON_COLOR_HOVER);
 
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
         {
-            resetButton.setFillColor(RESET_BUTTON_COLOR_PRESSED);
+            button.setFillColor(BUTTON_COLOR_PRESSED);
             return true;
         }
     }
 
     else
     {
-        resetButton.setFillColor(RESET_BUTTON_COLOR_IDLE);
+        button.setFillColor(BUTTON_COLOR_IDLE);
     }
 
     return false;
@@ -101,12 +115,12 @@ void drawGrid(sf::RenderWindow& window, const std::vector<std::vector<sf::Sprite
 
 std::vector<std::vector<sf::Sprite>> initGuiGrid()
 {
-    std::vector<std::vector<sf::Sprite>> guiGrid(DEFAULT_ROWS_NUM, std::vector<sf::Sprite>(DEFAULT_COLS_NUM));
+    std::vector<std::vector<sf::Sprite>> guiGrid(numRows, std::vector<sf::Sprite>(numCols));
 
     // Set the position and scale of each sprite
-    for (int i = 0; i < DEFAULT_ROWS_NUM; i++)
+    for (int i = 0; i < numRows; i++)
     {
-        for (int j = 0; j < DEFAULT_COLS_NUM; j++)
+        for (int j = 0; j < numCols; j++)
         {
             guiGrid[i][j].setTexture(unrevealedEmptyTexture);
             guiGrid[i][j].setPosition(i * CELL_SIZE, MENU_HEIGHT + j * CELL_SIZE);
@@ -116,13 +130,46 @@ std::vector<std::vector<sf::Sprite>> initGuiGrid()
         }
     }
 
-    clearingDeviceSprite.setPosition(0, -static_cast<float>(clearingDeviceTexture.getSize().y));
-    clearingDeviceSprite.setScale(static_cast<float>(WINDOW_WIDTH) / clearingDeviceTexture.getSize().x,
-        static_cast<float>(CLEANING_DEVICE_HEIGHT) / clearingDeviceTexture.getSize().y);
-
     return guiGrid;
 }
 
+void setupMenu(sf::Font& font, sf::RectangleShape& menuBackground, sf::Text& resetButton, sf::Text& flagsText, 
+                sf::Text& gameButton, std::vector<sf::Text>& dropdownOptions, sf::RectangleShape& dropdownBackground)
+{
+    // Menu background
+    menuBackground.setFillColor(sf::Color(200, 200, 200));
+    menuBackground.setSize(sf::Vector2f(windowWidth, MENU_HEIGHT));
+
+    // Reset button
+    resetButton.setPosition(10, 0);
+    
+    // Flags left text
+    flagsText.setPosition(10 + resetButton.getGlobalBounds().width, MENU_HEIGHT / 2);
+
+    // Game button
+    gameButton.setPosition(windowWidth - gameButton.getGlobalBounds().width - 5, 0);
+
+    // Dropdown background
+    dropdownBackground.setPosition(windowWidth - dropdownOptions[1].getGlobalBounds().width,
+        gameButton.getPosition().y + gameButton.getGlobalBounds().height);
+    dropdownBackground.setFillColor(sf::Color::White);
+    dropdownBackground.setOutlineThickness(1);
+    dropdownBackground.setOutlineColor(sf::Color::Black);
+
+    // Dropdown options
+    for (int i = 0; i < dropdownOptions.size(); i++)
+    {
+        dropdownOptions[i].setFillColor(sf::Color::Black);
+        dropdownOptions[i].setPosition(dropdownBackground.getGlobalBounds().left,
+            dropdownBackground.getGlobalBounds().top + dropdownOptions[0].getGlobalBounds().height * i);
+    }
+
+    // Cleaning device
+    clearingDeviceSprite.setTexture(clearingDeviceTexture);
+    clearingDeviceSprite.setPosition(0, -static_cast<float>(clearingDeviceTexture.getSize().y));
+    clearingDeviceSprite.setScale(static_cast<float>(windowWidth) / clearingDeviceTexture.getSize().x,
+        static_cast<float>(CLEANING_DEVICE_HEIGHT) / clearingDeviceTexture.getSize().y);
+}
 void setAppropriateTexture(std::vector<std::vector<sf::Sprite>>& guiGrid, int row, int col, sf::Texture& texture)
 {
     guiGrid[row][col].setTexture(texture);
@@ -223,9 +270,9 @@ void textureForSquare(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector
 void updateGuiGrid(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<std::vector<char>>& gameGrid)
 {
     // Set the position and scale of each sprite
-    for (int i = 0; i < DEFAULT_ROWS_NUM; i++)
+    for (int i = 0; i < numRows; i++)
     {
-        for (int j = 0; j < DEFAULT_COLS_NUM; j++)
+        for (int j = 0; j < numCols; j++)
         {
             textureForSquare(guiGrid, gameGrid, i, j);
         }
@@ -234,9 +281,9 @@ void updateGuiGrid(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<st
 
 bool checkWin(std::vector<std::vector<char>>& gameGrid)
 {
-    for (int i = 0; i < DEFAULT_ROWS_NUM; i++)
+    for (int i = 0; i < numRows; i++)
     {
-        for (int j = 0; j < DEFAULT_COLS_NUM; j++)
+        for (int j = 0; j < numCols; j++)
         {
             // If there's an empty square (either with a flag or not) that wasn't clicked, no win
             if (gameGrid[i][j] == UNREVEALED_EMPTY || gameGrid[i][j] == FLAG_EMPTY)
@@ -247,18 +294,12 @@ bool checkWin(std::vector<std::vector<char>>& gameGrid)
     return true;
 }
 
-
-void winScreen()
-{
-
-}
-
 void loseScreen(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<std::vector<char>>& gameGrid, int pressedMineRow, int pressedMineCol)
 {
     // Set the position and scale of each sprite
-    for (int i = 0; i < DEFAULT_ROWS_NUM; i++)
+    for (int i = 0; i < numRows; i++)
     {
-        for (int j = 0; j < DEFAULT_COLS_NUM; j++)
+        for (int j = 0; j < numCols; j++)
         {
             if (gameGrid[i][j] == UNREVEALED_MINE)
                 setAppropriateTexture(guiGrid, i, j, unpressedMineTexture);
@@ -274,27 +315,33 @@ void startGame()
     if (!initTextures())
         return;
 
-    std::vector<std::vector<char>> gameGrid = initGameGrid(DEFAULT_ROWS_NUM, DEFAULT_COLS_NUM, DEFAULT_MINES_NUM);
-    std::vector<std::vector<sf::Sprite>> guiGrid = initGuiGrid();
-
-    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Minesweeper", sf::Style::Titlebar | sf::Style::Close);
-    
-    sf::RectangleShape menuBar(sf::Vector2f(window.getSize().x, MENU_HEIGHT));
-    menuBar.setFillColor(sf::Color(200, 200, 200));
-
     sf::Font font;
     if (!font.loadFromFile("ArialFont/arial.ttf"))
         return;
 
-    // Reset button
-    sf::Text resetButton("Reset", font, 20);
-    resetButton.setPosition(10, (MENU_HEIGHT - RESET_BUTTON_HEIGHT) / 2);
+    std::vector<std::vector<char>> gameGrid = initGameGrid(numRows, numCols, numMines);
+    std::vector<std::vector<sf::Sprite>> guiGrid = initGuiGrid();
 
-    clearingDeviceSprite.setTexture(clearingDeviceTexture);
+    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Minesweeper", sf::Style::Titlebar | sf::Style::Close);
+    
+    sf::RectangleShape menuBackground(sf::Vector2f(window.getSize().x, MENU_HEIGHT));
+    sf::Text resetButton("Reset", font, 18);
+    sf::Text gameButton("Game", font, 18);
+    sf::Text flagsText("Flags: " + std::to_string(numMines) , font, 18);
+    flagsText.setFillColor(sf::Color::Red);
+    std::vector<sf::Text> dropdownOptions;
+    dropdownOptions.emplace_back("Beginner", font, 16);
+    dropdownOptions.emplace_back("Intermediate", font, 16);
+    dropdownOptions.emplace_back("Expert", font, 16);
+    dropdownOptions.emplace_back("Custom", font, 16);
+    sf::RectangleShape dropdownBackground(sf::Vector2f(dropdownOptions[1].getGlobalBounds().width,
+                                            dropdownOptions[0].getGlobalBounds().height * dropdownOptions.size()));
+
+    setupMenu(font, menuBackground, resetButton, flagsText, gameButton, dropdownOptions, dropdownBackground);
 
     bool gameWon = false;
     bool gameLost = false;
-
+    bool isDropdownOpen = false;
     bool isClearingAnimationFinished = false;
 
     while (window.isOpen())
@@ -307,18 +354,27 @@ void startGame()
 
             else if (event.type == sf::Event::MouseButtonReleased)
             {
+                // Get the mouse position relative to the window
+                sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
+                sf::Vector2f mousePositionF(static_cast<float>(mousePosition.x), static_cast<float>(mousePosition.y));
+
+                std::cout << "Coords" << mousePosition.x << ", " << mousePosition.y << std::endl;
+
+                // If pressed the menu bar or the tiny pixel row at the bottom, or if out of X bounds, ignore.
+                if (mousePositionF.y < MENU_HEIGHT || windowHeight - 1 < mousePositionF.y || mousePositionF.y < 0 || windowWidth < mousePositionF.x)
+                {
+                    // If pressed somewhere else in menu and not pressed game button, close menu
+                    if (mousePosition.y < MENU_HEIGHT && !gameButton.getGlobalBounds().contains(mousePositionF))
+                        isDropdownOpen = false;
+
+                    continue;
+                }
+
                 if (event.mouseButton.button == sf::Mouse::Left && !gameLost && !gameWon)
                 {
-                    // Get the mouse position relative to the window
-                    sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
-
-                    // If pressed the menu bar or the tiny pixel row at the bottom, or if out of X bounds, ignore.
-                    if (mousePosition.y < MENU_HEIGHT || WINDOW_HEIGHT - 1 < mousePosition.y || mousePosition.y < 0 || WINDOW_WIDTH < mousePosition.x)
-                        continue;
-
                     // Calculate the grid indices based on the mouse position
-                    int row = mousePosition.x / CELL_SIZE;
-                    int col = mousePosition.y / CELL_SIZE - MENU_HEIGHT / CELL_SIZE;
+                    int row = mousePositionF.x / CELL_SIZE;
+                    int col = mousePositionF.y / CELL_SIZE - MENU_HEIGHT / CELL_SIZE;
 
                     // Pressed a mine
                     if (gameGrid[row][col] == UNREVEALED_MINE)
@@ -345,49 +401,67 @@ void startGame()
 
                 else if (event.mouseButton.button == sf::Mouse::Right && !gameLost && !gameWon)
                 {
-                    // Get the mouse position relative to the window
-                    sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
-
-                    // If pressed the menu bar or the tiny pixel row at the bottom, or if out of X bounds, ignore.
-                    if (mousePosition.y < MENU_HEIGHT || WINDOW_HEIGHT - 1 < mousePosition.y || mousePosition.y < 0 || WINDOW_WIDTH < mousePosition.x)
-                        continue;
-
                     // Calculate the grid indices based on the mouse position
-                    int row = mousePosition.x / CELL_SIZE;
-                    int col = mousePosition.y / CELL_SIZE - MENU_HEIGHT / CELL_SIZE;
+                    int row = mousePositionF.x / CELL_SIZE;
+                    int col = mousePositionF.y / CELL_SIZE - MENU_HEIGHT / CELL_SIZE;
 
                     // Pressed outside
                     if (row == -1)
                         return;
 
-                    // Empty (or mine) square to flag
-                    if (gameGrid[row][col] == UNREVEALED_EMPTY)
-                        gameGrid[row][col] = FLAG_EMPTY;
+                    switch (gameGrid[row][col])
+                    {
+                        case UNREVEALED_EMPTY:
+                            gameGrid[row][col] = FLAG_EMPTY;
+                            numMines--;
+                            break;
 
-                    else if (gameGrid[row][col] == UNREVEALED_MINE)
-                        gameGrid[row][col] = FLAG_MINE;
+                        case UNREVEALED_MINE:
+                            gameGrid[row][col] = FLAG_MINE;
+                            numMines--;
+                            break;
 
-                    // Empty (or mine) square to flag
-                    else if (gameGrid[row][col] == FLAG_EMPTY)
-                        gameGrid[row][col] = UNREVEALED_EMPTY;
+                        case FLAG_EMPTY:
+                            gameGrid[row][col] = UNREVEALED_EMPTY;
+                            numMines++;
+                            break;
 
-                    // Empty (or mine) square to flag
-                    else if (gameGrid[row][col] == FLAG_MINE)
-                        gameGrid[row][col] = UNREVEALED_MINE;
+                        case FLAG_MINE:
+                            gameGrid[row][col] = UNREVEALED_MINE;
+                            numMines++;
+                            break;
 
+                        default:
+                            break;
+                    }
+
+                    flagsText.setString("Flags: " + std::to_string(numMines));
                     updateGuiGrid(guiGrid, gameGrid);
                 }
             }
         }
 
-        if (checkResetButtonPressed(window, resetButton))
+        if (checkButtonPressed(window, resetButton))
         {
-            gameGrid = initGameGrid(DEFAULT_ROWS_NUM, DEFAULT_COLS_NUM, DEFAULT_MINES_NUM);
+            numRows = difficultyMap[currDifficulty][0];
+            numCols = difficultyMap[currDifficulty][1];
+            numMines = difficultyMap[currDifficulty][2];
+            windowWidth = CELL_SIZE * numRows;
+            windowHeight = CELL_SIZE * numCols + MENU_HEIGHT;
+
+            window.setSize(sf::Vector2u(windowWidth, windowHeight));
+            window.setView(sf::View(sf::Vector2f(windowWidth / 2, windowHeight / 2), sf::Vector2f(windowWidth, windowHeight)));
+            gameGrid = initGameGrid(numRows, numCols, numMines);
             guiGrid = initGuiGrid();
+            flagsText.setString("Flags: " + std::to_string(numMines));
+            setupMenu(font, menuBackground, resetButton, flagsText, gameButton, dropdownOptions, dropdownBackground);
 
             gameWon = false;
             gameLost = false;
         }
+
+        if (checkButtonPressed(window, gameButton))
+            isDropdownOpen = true;
 
         // Animation update
         if (gameWon && !isClearingAnimationFinished)
@@ -395,7 +469,7 @@ void startGame()
             clearingDeviceSprite.move(0, 0.09); // Move the clearing device downwards
 
             // Check if the clearing device has reached the bottom of the screen
-            if (clearingDeviceSprite.getPosition().y >= WINDOW_HEIGHT)
+            if (clearingDeviceSprite.getPosition().y >= windowHeight)
             {
                 isClearingAnimationFinished = true;
                 MessageBox(NULL, L"You win", L"Congratulations", MB_ICONASTERISK);
@@ -404,7 +478,25 @@ void startGame()
 
         window.clear(sf::Color::White);
         drawGrid(window, guiGrid);
-        window.draw(menuBar);
+        window.draw(menuBackground);
+        window.draw(gameButton);
+        window.draw(flagsText);
+
+        // Draw the dropdown options if the dropdown is open
+        if (isDropdownOpen)
+        {
+            window.draw(dropdownBackground);
+            for (auto& option : dropdownOptions)
+            {
+                window.draw(option);
+                if (checkButtonPressed(window, option))
+                {
+                    // Change difficulty
+                    currDifficulty = option.getString();
+                }
+            }
+        }
+
         window.draw(resetButton);
         window.draw(clearingDeviceSprite);
         window.display();
