@@ -1,10 +1,12 @@
-# Version 1.2
-Added option to choose difficulty
-Added flags count
-CURRENTLY ADDING - Option for custom difficulty
+# Version 1.2.1
+Added option to choose custom rows, columns and mines count.
+Added icon
 
 # In the next version
-Not sure there will be one. Maybe, remember user choices via Registry.
+Not sure there will be one.\
+In case there will be (i.e I will have the will to do it), maybe: \
+-add a feature to remember user choices via registry.\
+-make adjcency logic work through the edges (like a 1 at the bottom line mine point to a mine at the top line).
 
 # How to run
 
