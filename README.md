@@ -1,3 +1,6 @@
+# Description
+A minesweeper game that is a bit more extendible than the original Winmine by microsoft. Made using SFML (my first SFML project).
+
 # Version 1.2.1
 Added option to choose custom rows, columns and mines count.
 Added icon
