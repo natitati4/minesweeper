@@ -133,25 +133,29 @@ std::vector<std::vector<sf::Sprite>> initGuiGrid()
     return guiGrid;
 }
 
-void setupMenu(sf::Font& font, sf::RectangleShape& menuBackground, sf::Text& resetButton, sf::Text& flagsText, 
-                sf::Text& gameButton, std::vector<sf::Text>& dropdownOptions, sf::RectangleShape& dropdownBackground)
+void setupMenu(sf::Font& font, sf::RectangleShape& menuBackground, sf::Text& resetButton, sf::Text& difficultyText, sf::Text& flagsText, sf::Text& gameButton,
+                std::vector<sf::Text>& dropdownOptions, sf::RectangleShape& dropdownBackground, std::vector<sf::Text>& customChoices,
+                sf::RectangleShape& customBackground)
 {
     // Menu background
     menuBackground.setFillColor(sf::Color(200, 200, 200));
     menuBackground.setSize(sf::Vector2f(windowWidth, MENU_HEIGHT));
 
     // Reset button
-    resetButton.setPosition(10, 0);
-    
+    resetButton.setPosition(5, 0);
+
     // Flags left text
-    flagsText.setPosition(10 + resetButton.getGlobalBounds().width, MENU_HEIGHT / 2);
+    flagsText.setPosition(5 , resetButton.getGlobalBounds().height + 5);
+
+    // Diifculty text
+    difficultyText.setPosition(5, flagsText.getGlobalBounds().top + flagsText.getGlobalBounds().height);
 
     // Game button
     gameButton.setPosition(windowWidth - gameButton.getGlobalBounds().width - 5, 0);
 
     // Dropdown background
     dropdownBackground.setPosition(windowWidth - dropdownOptions[1].getGlobalBounds().width,
-        gameButton.getPosition().y + gameButton.getGlobalBounds().height);
+                                    gameButton.getGlobalBounds().top + gameButton.getGlobalBounds().height);
     dropdownBackground.setFillColor(sf::Color::White);
     dropdownBackground.setOutlineThickness(1);
     dropdownBackground.setOutlineColor(sf::Color::Black);
@@ -161,7 +165,22 @@ void setupMenu(sf::Font& font, sf::RectangleShape& menuBackground, sf::Text& res
     {
         dropdownOptions[i].setFillColor(sf::Color::Black);
         dropdownOptions[i].setPosition(dropdownBackground.getGlobalBounds().left,
-            dropdownBackground.getGlobalBounds().top + dropdownOptions[0].getGlobalBounds().height * i);
+                                        dropdownBackground.getGlobalBounds().top + dropdownOptions[0].getGlobalBounds().height * i);
+    }
+
+    // Custom background
+    customBackground.setPosition(windowWidth - dropdownOptions[1].getGlobalBounds().width * 2,
+                                    dropdownBackground.getPosition().y);
+    customBackground.setFillColor(sf::Color::White);
+    customBackground.setOutlineThickness(1);
+    customBackground.setOutlineColor(sf::Color::Black);
+
+    // Custom choices input
+    for (int i = 0; i < customChoices.size(); i++)
+    {
+        customChoices[i].setFillColor(DARK_GREEN);
+        customChoices[i].setPosition(customBackground.getGlobalBounds().left,
+                                        customBackground.getGlobalBounds().top + customChoices[0].getGlobalBounds().height * i);
     }
 
     // Cleaning device
@@ -325,9 +344,11 @@ void startGame()
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Minesweeper", sf::Style::Titlebar | sf::Style::Close);
     
     sf::RectangleShape menuBackground(sf::Vector2f(window.getSize().x, MENU_HEIGHT));
-    sf::Text resetButton("Reset", font, 18);
-    sf::Text gameButton("Game", font, 18);
-    sf::Text flagsText("Flags: " + std::to_string(numMines) , font, 18);
+    sf::Text resetButton("Reset", font, 20);
+    sf::Text gameButton("Game", font, 20);
+    sf::Text difficultyText("Difficulty on reset: " + currDifficulty, font, 16);
+    difficultyText.setFillColor(BLACK);
+    sf::Text flagsText("Flags: " + std::to_string(numMines) , font, 16);
     flagsText.setFillColor(sf::Color::Red);
     std::vector<sf::Text> dropdownOptions;
     dropdownOptions.emplace_back("Beginner", font, 16);
@@ -337,12 +358,31 @@ void startGame()
     sf::RectangleShape dropdownBackground(sf::Vector2f(dropdownOptions[1].getGlobalBounds().width,
                                             dropdownOptions[0].getGlobalBounds().height * dropdownOptions.size()));
 
-    setupMenu(font, menuBackground, resetButton, flagsText, gameButton, dropdownOptions, dropdownBackground);
+    // Choices for custom dialog
+    std::vector<sf::Text> customChoices;
+    customChoices.emplace_back("Width: " + std::to_string(numRows), font, 16);
+    customChoices.emplace_back("Height: " + std::to_string(numCols), font, 16);
+    customChoices.emplace_back("Mines: " + std::to_string(numMines), font, 16);
+
+    sf::RectangleShape customBackground(sf::Vector2f(customChoices[1].getGlobalBounds().width + 38,
+        customChoices[0].getGlobalBounds().height * customChoices.size() + 10));
+
+    setupMenu(font, menuBackground, resetButton, difficultyText, flagsText, gameButton,
+                dropdownOptions, dropdownBackground, customChoices, customBackground);
 
     bool gameWon = false;
     bool gameLost = false;
     bool isDropdownOpen = false;
+    bool isCustomOpen = false;
     bool isClearingAnimationFinished = false;
+
+    bool isCursorVisible = true;
+    sf::Clock cursorClock;
+    int chosenInput = 0;
+
+    std::vector<std::string> inputStates(3);
+    for (int i = 0; i < 3; i++)
+        inputStates[i] = customChoices[i].getString();
 
     while (window.isOpen())
     {
@@ -358,14 +398,17 @@ void startGame()
                 sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
                 sf::Vector2f mousePositionF(static_cast<float>(mousePosition.x), static_cast<float>(mousePosition.y));
 
-                std::cout << "Coords" << mousePosition.x << ", " << mousePosition.y << std::endl;
-
                 // If pressed the menu bar or the tiny pixel row at the bottom, or if out of X bounds, ignore.
                 if (mousePositionF.y < MENU_HEIGHT || windowHeight - 1 < mousePositionF.y || mousePositionF.y < 0 || windowWidth < mousePositionF.x)
                 {
                     // If pressed somewhere else in menu and not pressed game button, close menu
                     if (mousePosition.y < MENU_HEIGHT && !gameButton.getGlobalBounds().contains(mousePositionF))
                         isDropdownOpen = false;
+
+                    // If pressed somewhere else in menu and not pressed game button or custom button, close custom
+                    if (mousePosition.y < MENU_HEIGHT && !dropdownOptions[3].getGlobalBounds().contains(mousePositionF)
+                                                        && !customBackground.getGlobalBounds().contains(mousePositionF))
+                        isCustomOpen = false;
 
                     continue;
                 }
@@ -374,7 +417,7 @@ void startGame()
                 {
                     // Calculate the grid indices based on the mouse position
                     int row = mousePositionF.x / CELL_SIZE;
-                    int col = mousePositionF.y / CELL_SIZE - MENU_HEIGHT / CELL_SIZE;
+                    int col = mousePositionF.y / CELL_SIZE - (float)MENU_HEIGHT / CELL_SIZE;
 
                     // Pressed a mine
                     if (gameGrid[row][col] == UNREVEALED_MINE)
@@ -403,7 +446,7 @@ void startGame()
                 {
                     // Calculate the grid indices based on the mouse position
                     int row = mousePositionF.x / CELL_SIZE;
-                    int col = mousePositionF.y / CELL_SIZE - MENU_HEIGHT / CELL_SIZE;
+                    int col = mousePositionF.y / CELL_SIZE - (float)MENU_HEIGHT / CELL_SIZE;
 
                     // Pressed outside
                     if (row == -1)
@@ -439,13 +482,78 @@ void startGame()
                     updateGuiGrid(guiGrid, gameGrid);
                 }
             }
+
+            // Check for keyboard events
+            if (event.type == sf::Event::TextEntered)
+            {
+                // Check if the selected input is editable, if the custom dialog is open, and if the length hasn't exceeded the custom dialog
+                if (0 <= chosenInput && chosenInput < customChoices.size() && isCustomOpen && inputStates[chosenInput].length() < 13)
+                {
+                    // Check if the entered character is a digit
+                    if (std::isdigit(static_cast<char>(event.text.unicode)))
+                    {
+                        // Append the character to the selected input's text
+                        char enteredChar = static_cast<char>(event.text.unicode);
+                        inputStates[chosenInput] += enteredChar;
+                        customChoices[chosenInput].setString(inputStates[chosenInput]);
+                    }
+                }
+            }
+
+            else if (event.type == sf::Event::KeyPressed)
+            {
+                // Check if Backspace key is pressed
+                if (event.key.code == sf::Keyboard::Backspace)
+                {
+                    // Remove the last character from the selected input's text
+                    if (0 <= chosenInput && chosenInput < customChoices.size())
+                    {
+                        std::string& selectedText = inputStates[chosenInput];
+                        if (!selectedText.empty())
+                        {
+                            // Check if the last character is a space
+                            if (selectedText.back() != ' ')
+                            {
+                                selectedText.pop_back();
+                                customChoices[chosenInput].setString(selectedText);
+                            }
+                        }
+                    }
+                }
+
+                // Check if Enter key is pressed
+                else if (event.key.code == sf::Keyboard::Enter)
+                {
+                    // If a space, means deleted all numbers
+                    if (!(inputStates[0].back() == ' ') && !(inputStates[1].back() == ' ') && !(inputStates[2].back() == ' '))
+                    {
+                        // Convert the input strings to integers
+                        int tempNumRows = std::stoi(inputStates[0].substr(inputStates[0].find(' ') + 1));
+                        int tempNumCols = std::stoi(inputStates[1].substr(inputStates[1].find(' ') + 1));
+                        int tempNumMines = std::stoi(inputStates[2].substr(inputStates[2].find(' ') + 1));
+
+                        // If not mines are equal or more than squares num
+                        if (tempNumRows * tempNumCols >= tempNumMines && (8 <= tempNumRows && tempNumRows <= 65) && (0 < tempNumCols && tempNumCols <= 35))
+                        {
+                            numRows = tempNumRows;
+                            numCols = tempNumCols;
+                            numMines = tempNumMines;
+                            isCustomOpen = false; // Close custom dialog
+                        }
+                    }
+                }
+            }
         }
 
         if (checkButtonPressed(window, resetButton))
         {
-            numRows = difficultyMap[currDifficulty][0];
-            numCols = difficultyMap[currDifficulty][1];
-            numMines = difficultyMap[currDifficulty][2];
+            if (currDifficulty != "Custom")
+            {
+                numRows = difficultyMap[currDifficulty][0];
+                numCols = difficultyMap[currDifficulty][1];
+                numMines = difficultyMap[currDifficulty][2];
+            }
+
             windowWidth = CELL_SIZE * numRows;
             windowHeight = CELL_SIZE * numCols + MENU_HEIGHT;
 
@@ -454,7 +562,8 @@ void startGame()
             gameGrid = initGameGrid(numRows, numCols, numMines);
             guiGrid = initGuiGrid();
             flagsText.setString("Flags: " + std::to_string(numMines));
-            setupMenu(font, menuBackground, resetButton, flagsText, gameButton, dropdownOptions, dropdownBackground);
+            setupMenu(font, menuBackground, resetButton, difficultyText, flagsText, gameButton,
+                        dropdownOptions, dropdownBackground, customChoices, customBackground);
 
             gameWon = false;
             gameLost = false;
@@ -476,10 +585,12 @@ void startGame()
             }
         }
 
+        // Draw all
         window.clear(sf::Color::White);
         drawGrid(window, guiGrid);
         window.draw(menuBackground);
         window.draw(gameButton);
+        window.draw(difficultyText);
         window.draw(flagsText);
 
         // Draw the dropdown options if the dropdown is open
@@ -493,9 +604,48 @@ void startGame()
                 {
                     // Change difficulty
                     currDifficulty = option.getString();
+                    difficultyText.setString("Difficulty on reset: " + currDifficulty);
+
+                    if (currDifficulty == "Custom")
+                        isCustomOpen = true;
                 }
             }
         }
+
+        // In case custom dialog is open, do stuff related to it
+        if (isCustomOpen)
+        {
+            // Draw background
+            window.draw(customBackground);
+
+
+            // Draw choices
+            for (int i = 0; i < customChoices.size(); ++i)
+            {
+                auto& input = customChoices[i];
+                window.draw(input);
+
+                if (checkButtonPressed(window, input))
+                {
+                    customChoices[chosenInput].setString(inputStates[chosenInput]); // Remove pipe from previous chosen
+                    chosenInput = i;
+                }
+            }
+
+            // Handle cursor blinking
+            if (cursorClock.getElapsedTime().asSeconds() >= 0.5f)
+            {
+                isCursorVisible = !isCursorVisible;
+                cursorClock.restart();
+            }
+
+            if (isCursorVisible)
+                customChoices[chosenInput].setString(inputStates[chosenInput] + "|");
+
+            else
+                customChoices[chosenInput].setString(inputStates[chosenInput]);
+        }
+
 
         window.draw(resetButton);
         window.draw(clearingDeviceSprite);
