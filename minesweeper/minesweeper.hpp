@@ -4,8 +4,6 @@
 #include <unordered_map>
 #include <time.h>
 
-#define CELL_SIZE 20
-
 #define DEFAULT_ROWS_NUM 15
 #define DEFAULT_COLS_NUM 15
 

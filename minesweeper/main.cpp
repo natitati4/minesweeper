@@ -1,8 +1,9 @@
 #include "minesweeper.hpp"
 #include "gui.hpp"
 
-int main()
-{	
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+	PSTR lpCmdLine, int nCmdShow)
+{
 	startGame();
 	return 0;
 }

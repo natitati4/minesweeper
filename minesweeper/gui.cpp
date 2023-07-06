@@ -342,6 +342,11 @@ void startGame()
     std::vector<std::vector<sf::Sprite>> guiGrid = initGuiGrid();
 
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Minesweeper", sf::Style::Titlebar | sf::Style::Close);
+
+    // Set the icon
+    sf::Image icon;
+    icon.loadFromFile("Images/flag.png");
+    window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
     
     sf::RectangleShape menuBackground(sf::Vector2f(window.getSize().x, MENU_HEIGHT));
     sf::Text resetButton("Reset", font, 20);
