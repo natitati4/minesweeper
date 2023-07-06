@@ -8,8 +8,9 @@ Added icon
 # In the next version
 Not sure there will be one.\
 In case there will be (i.e I will have the will to do it), maybe: \
--add a feature to remember user choices via registry.\
--make adjcency logic work through the edges (like a 1 at the bottom line mine point to a mine at the top line).
+-Add a feature to remember user choices via registry.\
+-Make adjcency logic work through the edges (like a 1 at the bottom line mine point to a mine at the top line).
+-Add sounds
 
 # How to run
 
