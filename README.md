@@ -28,10 +28,11 @@ cd minesweeper
 minesweeper.sln
 ```
 
+Then build. You shouldn't have problems if you cloned the repo correctly.
+
+**If you still have problem:**
 Refer to the following video to understand how to set up SFML in Visual Studio: `https://www.youtube.com/watch?v=lFzpkvrscs4`.
-
 After compiling, in the x64/Release (or x64/Debug), Add these 2 folders (from the minesweeper folder): `ArialFont` and `Images`. These are for the font and the images of the game.
-
 Now you can run the newly created `minesweeper.exe` in either the Release or Debug folders.
 
 # Limitations
