@@ -14,8 +14,11 @@ sf::Texture num6Texture;
 sf::Texture num7Texture;
 sf::Texture num8Texture;
 sf::Texture clearingDeviceTexture;
-sf::Texture gameTextTexture;
+sf::Texture smileyFace;
+sf::Texture sunglassesFace;
+sf::Texture deadFace;
 sf::Sprite clearingDeviceSprite;
+sf::Sprite resetButton;
 
 std::unordered_map<std::string, std::vector<int>> difficultyMap{
     {"Beginner", {9, 9, 10}},
@@ -32,10 +35,10 @@ int windowHeight = CELL_SIZE * numCols + MENU_HEIGHT;
 
 bool initTextures()
 {
-    if (!unrevealedEmptyTexture.loadFromFile("Images/unrevealed_empty.png"))
+    if (!unrevealedEmptyTexture.loadFromFile("Images/unrevealedEmpty.png"))
         return false;
     
-    if (!revealedEmptyTexture.loadFromFile("Images/revealed_empty.png"))
+    if (!revealedEmptyTexture.loadFromFile("Images/revealedEmpty.png"))
         return false;
 
     if (!pressedMineTexture.loadFromFile("Images/pressedMine.png"))
@@ -74,11 +77,21 @@ bool initTextures()
     if (!clearingDeviceTexture.loadFromFile("Images/cleaningDevice.png"))
         return false;
 
+    if (!smileyFace.loadFromFile("Images/smileyFace.png"))
+        return false;
+
+    if (!sunglassesFace.loadFromFile("Images/sunglassesFace.png"))
+        return false;
+
+    if (!deadFace.loadFromFile("Images/deadFace.png"))
+        return false;
+
     // Everything fine, return true
     return true;
 }
 
-bool checkButtonPressed(const sf::RenderWindow& window, sf::Text& button)
+
+bool checkTextPressed(const sf::RenderWindow& window, sf::Text& button)
 {
     sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
     sf::Vector2f mousePositionF(static_cast<float>(mousePosition.x), static_cast<float>(mousePosition.y));
@@ -97,6 +110,20 @@ bool checkButtonPressed(const sf::RenderWindow& window, sf::Text& button)
     else
     {
         button.setFillColor(BUTTON_COLOR_IDLE);
+    }
+
+    return false;
+}
+
+bool checkSpritePressed(const sf::RenderWindow& window, sf::Sprite& button)
+{
+    sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
+    sf::Vector2f mousePositionF(static_cast<float>(mousePosition.x), static_cast<float>(mousePosition.y));
+
+    if (button.getGlobalBounds().contains(mousePositionF))
+    {
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+            return true;
     }
 
     return false;
@@ -133,7 +160,7 @@ std::vector<std::vector<sf::Sprite>> initGuiGrid()
     return guiGrid;
 }
 
-void setupMenu(sf::Font& font, sf::RectangleShape& menuBackground, sf::Text& resetButton, sf::Text& difficultyText, sf::Text& flagsText, sf::Text& gameButton,
+void setupMenu(sf::Font& font, sf::RectangleShape& menuBackground, sf::Text& difficultyText, sf::Text& flagsText, sf::Text& gameButton,
                 std::vector<sf::Text>& dropdownOptions, sf::RectangleShape& dropdownBackground, std::vector<sf::Text>& customChoices,
                 sf::RectangleShape& customBackground)
 {
@@ -141,8 +168,10 @@ void setupMenu(sf::Font& font, sf::RectangleShape& menuBackground, sf::Text& res
     menuBackground.setFillColor(sf::Color(200, 200, 200));
     menuBackground.setSize(sf::Vector2f(windowWidth, MENU_HEIGHT));
 
-    // Reset button
-    resetButton.setPosition(5, 0);
+    resetButton.setTexture(smileyFace);
+    resetButton.setPosition(5, 5);
+    resetButton.setScale(static_cast<float>(RESET_BUTTON_SIZE) / smileyFace.getSize().x,
+        static_cast<float>(RESET_BUTTON_SIZE) / smileyFace.getSize().y);
 
     // Flags left text
     flagsText.setPosition(5 , resetButton.getGlobalBounds().height + 5);
@@ -188,6 +217,8 @@ void setupMenu(sf::Font& font, sf::RectangleShape& menuBackground, sf::Text& res
     clearingDeviceSprite.setPosition(0, -static_cast<float>(clearingDeviceTexture.getSize().y));
     clearingDeviceSprite.setScale(static_cast<float>(windowWidth) / clearingDeviceTexture.getSize().x,
         static_cast<float>(CLEANING_DEVICE_HEIGHT) / clearingDeviceTexture.getSize().y);
+
+
 }
 void setAppropriateTexture(std::vector<std::vector<sf::Sprite>>& guiGrid, int row, int col, sf::Texture& texture)
 {
@@ -306,10 +337,14 @@ bool checkWin(std::vector<std::vector<char>>& gameGrid)
         {
             // If there's an empty square (either with a flag or not) that wasn't clicked, no win
             if (gameGrid[i][j] == UNREVEALED_EMPTY || gameGrid[i][j] == FLAG_EMPTY)
+            {
                 return false;
+            }
         }
     }
 
+    // Set winning texture for face and return true
+    resetButton.setTexture(sunglassesFace);
     return true;
 }
 
@@ -325,8 +360,9 @@ void loseScreen(std::vector<std::vector<sf::Sprite>>& guiGrid, std::vector<std::
         }
     }
 
-    // Set texture for the pressed mine
+    // Set texture for the pressed mine and losing texture for face
     setAppropriateTexture(guiGrid, pressedMineRow, pressedMineCol, pressedMineTexture);
+    resetButton.setTexture(deadFace);
 }
 
 void startGame()
@@ -349,7 +385,7 @@ void startGame()
     window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
     
     sf::RectangleShape menuBackground(sf::Vector2f(window.getSize().x, MENU_HEIGHT));
-    sf::Text resetButton("Reset", font, 20);
+    resetButton.setTexture(smileyFace);
     sf::Text gameButton("Game", font, 20);
     sf::Text difficultyText("Difficulty on reset: " + currDifficulty, font, 16);
     difficultyText.setFillColor(BLACK);
@@ -372,7 +408,7 @@ void startGame()
     sf::RectangleShape customBackground(sf::Vector2f(customChoices[1].getGlobalBounds().width + 38,
         customChoices[0].getGlobalBounds().height * customChoices.size() + 10));
 
-    setupMenu(font, menuBackground, resetButton, difficultyText, flagsText, gameButton,
+    setupMenu(font, menuBackground, difficultyText, flagsText, gameButton,
                 dropdownOptions, dropdownBackground, customChoices, customBackground);
 
     bool gameWon = false;
@@ -550,7 +586,7 @@ void startGame()
             }
         }
 
-        if (checkButtonPressed(window, resetButton))
+        if (checkSpritePressed(window, resetButton))
         {
             if (currDifficulty != "Custom")
             {
@@ -567,14 +603,14 @@ void startGame()
             gameGrid = initGameGrid(numRows, numCols, numMines);
             guiGrid = initGuiGrid();
             flagsText.setString("Flags: " + std::to_string(numMines));
-            setupMenu(font, menuBackground, resetButton, difficultyText, flagsText, gameButton,
+            setupMenu(font, menuBackground, difficultyText, flagsText, gameButton,
                         dropdownOptions, dropdownBackground, customChoices, customBackground);
 
             gameWon = false;
             gameLost = false;
         }
 
-        if (checkButtonPressed(window, gameButton))
+        if (checkTextPressed(window, gameButton))
             isDropdownOpen = true;
 
         // Animation update
@@ -605,7 +641,7 @@ void startGame()
             for (auto& option : dropdownOptions)
             {
                 window.draw(option);
-                if (checkButtonPressed(window, option))
+                if (checkTextPressed(window, option))
                 {
                     // Change difficulty
                     currDifficulty = option.getString();
@@ -630,7 +666,7 @@ void startGame()
                 auto& input = customChoices[i];
                 window.draw(input);
 
-                if (checkButtonPressed(window, input))
+                if (checkTextPressed(window, input))
                 {
                     customChoices[chosenInput].setString(inputStates[chosenInput]); // Remove pipe from previous chosen
                     chosenInput = i;

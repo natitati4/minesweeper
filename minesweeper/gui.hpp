@@ -23,6 +23,7 @@
 #define DARK_GREEN sf::Color(00, 128, 00)
 #define BLACK sf::Color(0, 0, 0)
 
+#define RESET_BUTTON_SIZE 30
 #define CLEANING_DEVICE_HEIGHT 30
 
 #define GAME_BUTTON_WIDTH 60
