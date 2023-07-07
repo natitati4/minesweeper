@@ -2,7 +2,7 @@
 A minesweeper game that is a bit more extendible than the original Winmine by microsoft. Made using SFML (my first SFML project).
 
 # Version 1.2.2
-Added smiley face because this is the heart of minesweeper
+Added smiley face because this is the heart of minesweeper.
 
 # In the next version
 Not sure there will be one.\
