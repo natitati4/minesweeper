@@ -6,10 +6,12 @@ Added smiley face because this is the heart of minesweeper.
 
 # In the next version
 Not sure there will be one.\
-In case there will be (i.e I will have the will to do it), maybe: \
+In case there will be (i.e I will have the will to do it), I got some ideas: \
 -Add a feature to remember user choices via registry.\
 -Make adjcency logic work through the edges (like a 1 at the bottom line mine point to a mine at the top line).
 -Add sounds
+-Add a feature to show the squares that hasn't been clicked yet (useful when there aren't many left)
+-Add a timer
 
 # How to run
 
